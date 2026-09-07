@@ -1,0 +1,11 @@
+spring:
+  config:
+    activate:
+      on-profile: production
+
+server:
+  port: 3000
+  forward-headers-strategy: native
+
+cors:
+  allowed-origins:

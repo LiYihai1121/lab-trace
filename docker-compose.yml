@@ -15,6 +15,7 @@ services:
     image: lab-trace:local
     build:
       context: .
+      dockerfile: Dockerfile
     environment:
       NODE_ENV: test
     ports:
@@ -34,6 +35,7 @@ services:
     image: lab-trace:local
     build:
       context: .
+      dockerfile: Dockerfile
     environment:
       NODE_ENV: production
       # 生产启动强制校验密钥：未设置时容器拒绝启动（compose 也会在启动前报错）
@@ -51,6 +53,48 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  # Phase 2+ 迁移验证期可启用 Spring Boot 服务
+  # lab-trace-spring-test:
+  #   profiles: ['test']
+  #   image: lab-trace-spring:local
+  #   build:
+  #     context: .
+  #     dockerfile: spring/Dockerfile
+  #   environment:
+  #     NODE_ENV: test
+  #   ports:
+  #     - '3110:3000'
+  #   volumes:
+  #     - lab-trace-spring-test-data:/app/data
+  #   healthcheck:
+  #     test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 3
+  #     start_period: 10s
+
+  # lab-trace-spring-prod:
+  #   profiles: ['prod']
+  #   image: lab-trace-spring:local
+  #   build:
+  #     context: .
+  #     dockerfile: spring/Dockerfile
+  #   environment:
+  #     NODE_ENV: production
+  #     JWT_SECRET: ${JWT_SECRET:?请先在环境中设置 JWT_SECRET}
+  #   ports:
+  #     - '3001:3000'
+  #   volumes:
+  #     - lab-trace-spring-prod-data:/app/data
+  #   healthcheck:
+  #     test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
+  #     interval: 30s
+  #     timeout: 5s
+  #     retries: 3
+  #     start_period: 10s
+
 volumes:
   lab-trace-test-data:
   lab-trace-prod-data:
+  # lab-trace-spring-test-data:
+  # lab-trace-spring-prod-data:

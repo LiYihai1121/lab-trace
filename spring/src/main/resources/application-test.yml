@@ -1,0 +1,10 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+
+server:
+  port: 3100
+
+cors:
+  allowed-origins:

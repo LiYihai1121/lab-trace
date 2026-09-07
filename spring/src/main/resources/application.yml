@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: lab-trace-server
+  profiles:
+    active: ${NODE_ENV:development}
+  datasource:
+    url: jdbc:sqlite:${DB_PATH:./data/lab-checkin.db}
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    show-sql: false
+  sql:
+    init:
+      mode: never
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    clean-disabled: true
+
+app:
+  admin:
+    default-password: ${ADMIN_PASSWORD:admin123}
+    create-default: ${CREATE_DEFAULT_ADMIN:true}
+
+server:
+  port: ${PORT:3000}
+  forward-headers-strategy: ${TRUST_PROXY:native}
+
+cors:
+  allowed-origins: ${CORS_ORIGIN:}
+
+jwt:
+  secret: ${JWT_SECRET:lab-trace-dev-secret-change-in-production}
+  ttl: 24h
+
+rate-limit:
+  login:
+    capacity: 10
+    window: 15m
+  reset:
+    capacity: 5
+    window: 15m
+  checkin:
+    capacity: 10
+    window: 1m
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: never
