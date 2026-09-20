@@ -18,6 +18,8 @@ services:
       dockerfile: Dockerfile
     environment:
       NODE_ENV: test
+      # 业务时间（签到/签退/“今日”统计）以服务器本地时区为准，容器内默认 UTC 会导致日期边界偏移
+      TZ: ${TZ:-Asia/Shanghai}
     ports:
       - '3100:3100'
     volumes:
@@ -38,6 +40,8 @@ services:
       dockerfile: Dockerfile
     environment:
       NODE_ENV: production
+      # 业务时间（签到/签退/“今日”统计）以服务器本地时区为准，容器内默认 UTC 会导致日期边界偏移
+      TZ: ${TZ:-Asia/Shanghai}
       # 生产启动强制校验密钥：未设置时容器拒绝启动（compose 也会在启动前报错）
       JWT_SECRET: ${JWT_SECRET:?请先在环境中设置 JWT_SECRET}
       # 可选：CORS_ORIGIN / TRUST_PROXY / CREATE_DEFAULT_ADMIN / ADMIN_PASSWORD 按需追加
