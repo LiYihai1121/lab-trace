@@ -7,6 +7,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import './db/database.ts';
 import { environment, appVersion } from './config/environment.ts';
+import { startDailyBackup } from './utils/backup.ts';
 import authRoutes from './routes/auth.ts';
 import userRoutes from './routes/users.ts';
 import qrcodeRoutes from './routes/qrcode.ts';
@@ -105,6 +106,7 @@ const server = app.listen(PORT, () => {
   console.info(
     `[环境] ${environment.label}（NODE_ENV=${environment.name}）| 版本 v${appVersion} | 数据库=${dbDesc} | CORS=${corsDesc}`,
   );
+  startDailyBackup();
 });
 
 // 端口被占用（如 --watch 重启时旧实例尚未退出）时给出明确原因而非裸堆栈

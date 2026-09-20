@@ -1,4 +1,4 @@
-/** 与后端 API 对应的数据行类型（供各视图复用） */
+/** 与后端 API 对应的数据行类型（供各视图复用）；源定义在 server/src/types.ts，保持字段一致 */
 
 export interface CheckinRecordRow {
   id: number;

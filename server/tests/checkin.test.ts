@@ -34,7 +34,7 @@ describe('checkin routes', () => {
   beforeAll(() => {
     userId = insertUser();
     const user = db.prepare('SELECT * FROM users WHERE id = ?').all(userId)[0] as UserRow;
-    token = signToken(user);
+    token = signToken(user, user.token_version);
   });
 
   it('checks in with a valid code and checks out', async () => {

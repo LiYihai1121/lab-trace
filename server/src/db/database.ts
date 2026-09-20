@@ -20,13 +20,14 @@ type UntypedStatement = Omit<StatementSync, 'get' | 'all'> & {
   all(...params: any[]): any[];
 };
 
-// 默认数据库文件按环境区分（测试环境独立建库），DB_PATH 显式设置时优先
-const db = new DatabaseSync(process.env.DB_PATH || path.join(dataDir, environment.dbFile)) as Omit<
-  InstanceType<typeof DatabaseSync>,
-  'prepare'
-> & {
+/** 含 serialize 的完整数据库类型（备份用）；prepare 保持宽松签名 */
+export type BackupableDatabase = Omit<InstanceType<typeof DatabaseSync>, 'prepare' | 'serialize'> & {
   prepare(sql: string): UntypedStatement;
+  serialize(): Uint8Array;
 };
+
+// 默认数据库文件按环境区分（测试环境独立建库），DB_PATH 显式设置时优先
+const db = new DatabaseSync(process.env.DB_PATH || path.join(dataDir, environment.dbFile)) as BackupableDatabase;
 
 // 建表与索引：幂等执行，重复启动不破坏已有数据
 const SCHEMA_STATEMENTS = [
@@ -38,6 +39,7 @@ const SCHEMA_STATEMENTS = [
     password_hash TEXT NOT NULL,
     name          TEXT NOT NULL,
     role          TEXT NOT NULL DEFAULT 'student' CHECK (role IN ('student','admin')),
+    token_version INTEGER NOT NULL DEFAULT 0,
     created_at    TEXT NOT NULL
   )`,
 
@@ -78,6 +80,12 @@ for (const sql of SCHEMA_STATEMENTS) {
 
 // 外键约束需每个连接单独开启
 db.prepare('PRAGMA foreign_keys = ON').run();
+
+// 轻量迁移：为既有库补充 token_version 列（建表语句只对新库生效）
+const userColumns = (db.prepare('PRAGMA table_info(users)').all() as Array<{ name: string }>).map((c) => c.name);
+if (!userColumns.includes('token_version')) {
+  db.prepare('ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0').run();
+}
 
 // 同一用户同时只允许一条进行中的签到记录（并发签到在数据库层兜底）；
 // 若历史数据已存在重复进行中记录，先收敛为已结束再建唯一索引

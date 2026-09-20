@@ -13,11 +13,13 @@ export interface AuthUser {
 
 export interface UserRow extends AuthUser {
   password_hash: string;
+  /** 凭证版本号：修改/重置密码时 +1，使此前签发的 JWT 立即失效 */
+  token_version: number;
   created_at: string;
 }
 
-/** 对外暴露的用户字段（不含密码哈希） */
-export type UserPublicRow = Omit<UserRow, 'password_hash'>;
+/** 对外暴露的用户字段（不含密码哈希与凭证版本号） */
+export type UserPublicRow = Omit<UserRow, 'password_hash' | 'token_version'>;
 
 export interface CheckinCodeRow {
   id: number;

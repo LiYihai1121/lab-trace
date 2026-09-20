@@ -11,16 +11,18 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
 const JWT_SECRET = process.env.JWT_SECRET || 'lab-trace-dev-secret-change-in-production';
 const TOKEN_TTL: SignOptions['expiresIn'] = '24h';
 
-/** 签发 JWT：payload 为用户基本信息 */
-export function signToken(user: AuthUser): string {
-  return jwt.sign({ id: user.id, username: user.username, name: user.name, role: user.role }, JWT_SECRET, {
-    expiresIn: TOKEN_TTL,
-  });
+/** 签发 JWT：payload 为用户基本信息 + 凭证版本号（改密后旧 token 立即失效） */
+export function signToken(user: AuthUser, tokenVersion: number): string {
+  return jwt.sign(
+    { id: user.id, username: user.username, name: user.name, role: user.role, tv: tokenVersion },
+    JWT_SECRET,
+    { expiresIn: TOKEN_TTL },
+  );
 }
 
 /**
- * 登录校验中间件：验证 token 后实时读取用户，使角色调整与账号删除即时生效
- * （JWT 有效期内被降级/删除的账号不再持有旧权限）
+ * 登录校验中间件：验证 token 后实时读取用户，使角色调整、账号删除、密码修改即时生效
+ * （tv 与库中 token_version 不一致即视为旧凭证）
  */
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
   const header = req.headers.authorization || '';
@@ -35,13 +37,18 @@ export function authenticate(req: Request, res: Response, next: NextFunction): v
     res.status(401).json({ message: '登录已过期，请重新登录' });
     return;
   }
-  const user = db.prepare('SELECT id, username, name, role FROM users WHERE id = ?').all(payload.id)[0] as
-    AuthUser | undefined;
+  const user = db.prepare('SELECT id, username, name, role, token_version FROM users WHERE id = ?').all(payload.id)[0] as
+    (AuthUser & { token_version: number }) | undefined;
   if (!user) {
     res.status(401).json({ message: '账号不存在或已被删除' });
     return;
   }
-  req.user = user;
+  // 凭证版本号不一致：密码已被修改/重置，要求重新登录
+  if (typeof payload.tv !== 'number' || payload.tv !== user.token_version) {
+    res.status(401).json({ message: '凭证已失效，请重新登录' });
+    return;
+  }
+  req.user = { id: user.id, username: user.username, name: user.name, role: user.role };
   next();
 }
 

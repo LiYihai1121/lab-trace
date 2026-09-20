@@ -26,7 +26,7 @@ router.post('/login', (req, res) => {
     return res.status(401).json({ message: '用户名或密码错误' });
   }
   const info = { id: user.id, username: user.username, name: user.name, role: user.role };
-  res.json({ token: signToken(info), user: info });
+  res.json({ token: signToken(info, user.token_version), user: info });
 });
 
 /** 当前登录用户信息 */
@@ -51,7 +51,10 @@ router.put('/password', authenticate, (req, res) => {
   if (!row || !bcrypt.compareSync(String(oldPassword), row.password_hash)) {
     return res.status(400).json({ message: '原密码错误' });
   }
-  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(newPassword), req.user.id);
+  db.prepare('UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?').run(
+    hashPassword(newPassword),
+    req.user.id,
+  );
   res.json({ message: '密码修改成功' });
 });
 
@@ -81,9 +84,12 @@ router.post('/password/reset', (req, res) => {
     return res.status(400).json({ message: '找回码无效或已过期' });
   }
 
-  // 改密码与作废找回码必须同时生效，避免作废失败时找回码被重复使用
+  // 改密码、提升凭证版本号与作废找回码必须同时生效，避免作废失败时找回码被重复使用
   withTransaction(() => {
-    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(newPassword), user.id);
+    db.prepare('UPDATE users SET password_hash = ?, token_version = token_version + 1 WHERE id = ?').run(
+      hashPassword(newPassword),
+      user.id,
+    );
     db.prepare('UPDATE password_reset_tokens SET used_at = ? WHERE id = ?').run(nowStr(), token.id);
   });
   res.json({ message: '密码重置成功，请使用新密码登录' });

@@ -98,7 +98,7 @@ router.put('/:id', (req, res) => {
     if (String(req.body.password).length < 6) {
       return res.status(400).json({ message: '密码至少 6 位' });
     }
-    sql += ', password_hash = ?';
+    sql += ', password_hash = ?, token_version = token_version + 1';
     params.push(hashPassword(req.body.password));
   }
   sql += ' WHERE id = ?';

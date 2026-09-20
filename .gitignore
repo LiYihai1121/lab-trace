@@ -10,6 +10,7 @@ web/dist-dev/
 server/data/*.db
 server/data/*.db-shm
 server/data/*.db-wal
+server/data/backups/
 
 # env & secrets
 # server 环境文件可能含密钥一律不入库；仅无密钥的默认环境文件与生产模板放行

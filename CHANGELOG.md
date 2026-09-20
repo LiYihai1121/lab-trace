@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- 修复 Docker 容器内时区默认为 UTC 导致签到/签退时间与「今日」统计日期边界偏移 8 小时的问题：`docker-compose.yml` 为 test/prod 服务注入 `TZ`（默认 `Asia/Shanghai`，可用环境变量覆盖）；`server/.env.production.example` 补充 TZ 说明
+
+### Added
+
+- **凭证版本号（token_version）**：修改或重置密码后，此前签发的 JWT 立即失效，防止旧 token 继续访问
+- **每日数据库备份**：服务启动时及每 24 小时自动将 SQLite 快照备份至 `server/data/backups/`，保留最近 10 份
+
 ### Changed
 
 - 项目更名为 **LabTrace**：GitHub 仓库 `lab-checkin` → `lab-trace`，双包更名 `lab-trace-server` / `lab-trace-web`，镜像路径迁移至 `ghcr.io/liyihai1121/lab-trace`，界面品牌（Logo/kicker/标题）与全部文档同步更新；SQLite 默认数据文件名保持 `lab-checkin.db` 不变，避免存量数据迁移
